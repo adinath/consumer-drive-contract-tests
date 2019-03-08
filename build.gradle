@@ -1,0 +1,85 @@
+
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+    dependencies {
+        classpath('org.springframework.boot:spring-boot-gradle-plugin:1.5.2.RELEASE')
+    }
+}
+
+plugins {
+    id "au.com.dius.pact" version "3.5.19"
+}
+
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'au.com.dius.pact'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.7'
+    compile 'org.springframework.boot:spring-boot-starter-web:1.5.2.RELEASE'
+    compile 'org.springframework.boot:spring-boot-starter-actuator'
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda:2.9.5'
+    compileOnly 'org.projectlombok:lombok:1.18.6'
+    annotationProcessor 'org.projectlombok:lombok:1.18.6'
+    compile group: 'joda-time', name: 'joda-time', version: '2.3'
+
+
+    testCompile 'au.com.dius:pact-jvm-consumer-junit5_2.12:3.5.19'
+
+    testCompile 'org.assertj:assertj-core:2.0.0'
+    testCompile 'org.mockito:mockito-core:1.10.19'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
+}
+
+
+test {
+    useJUnitPlatform {
+        // excludeTags 'sample'
+    }
+    systemProperties['pact.rootDir'] = "$buildDir/custom-pacts-directory"
+}
+
+pact {
+
+    serviceProviders {
+
+        // You can define as many as you need, but each must have a unique name
+        test_provider {
+            // All the provider properties are optional, and have sensible defaults (shown below)
+            protocol = 'http'
+            host = 'localhost'
+            port = 8081
+            path = '/passport'
+
+            // Again, you can define as many consumers for each provider as you need, but each must have a unique name
+            hasPactWith('test_consumer') {
+
+                // currently supports a file path using file() or a URL using url()
+                pactSource = file("$buildDir/custom-pacts-directory/test_consumer-test_provider.json")
+
+            }
+
+        }
+
+    }
+
+}
+
+task copyDockerFile(type: Copy) {
+    from './Dockerfile'
+    into 'build'
+    rename { String fileName ->
+        'Dockerfile'
+    }
+}
+
+
